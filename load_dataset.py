@@ -99,12 +99,12 @@ class ZstJsonlPackedTokenDataset(IterableDataset):
         with open(path, "rb") as f:
             dctx = zstd.ZstdDecompressor()
             with dctx.stream_reader(f) as r:
-                buf = b""
+                buf = bytearray()
                 while True:
                     chunk = r.read(self.chunk_size)
                     if not chunk:
                         break
-                    buf += chunk
+                    buf.extend(chunk)
                     *lines, buf = buf.split(b"\n")
                     for line in lines:
                         if line:
@@ -132,7 +132,14 @@ class ZstJsonlPackedTokenDataset(IterableDataset):
                 if self.max_chars is not None and len(text) > self.max_chars:
                     continue
 
-                ids = self.tok(text, add_special_tokens=False)["input_ids"]
+                #ids = self.tok(text, add_special_tokens=False)["input_ids"]
+                ids = self.tok(
+                    text,
+                    add_special_tokens=False,
+                    truncation=True,
+                    max_length=self.block_size - 1,  # eos を足す余地
+                )["input_ids"]
+
 
                 if not ids:
                     continue
@@ -173,6 +180,11 @@ if __name__ == "__main__":
     ds = ZstJsonlPackedTokenDataset(RAW_DIR)
 
     for i,d in enumerate(ds):
-        print(i, len(d["input_ids"]), d["input_ids"][:5], d["input_ids"][-5:])
+        eos_id = 50256
+        eos_cnt = 0
+        for id in d["input_ids"]:
+            if id == eos_id:
+                eos_cnt+=1
+        print(i, len(d["input_ids"]), d["input_ids"][:5], d["input_ids"][-5:], f"eos_cnt: {eos_cnt}")
         if i > 3:
             break
