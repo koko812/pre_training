@@ -26,10 +26,10 @@ tokenizer.pad_token = tokenizer.eos_token
 
 cfg = GPT2Config(
     vocab_size=tokenizer.vocab_size,
-    n_embd=512,
+    n_embd=768,
     n_positions=SEQ_LEN,
-    n_layer=6,
-    n_head=8,
+    n_layer=12,
+    n_head=12,
 )
 model = GPT2LMHeadModel(cfg)
 model.resize_token_embeddings(len(tokenizer))
@@ -45,7 +45,7 @@ wandb.init(project="ultra_pretrain", name=run_name)
 micro_bsz = 16
 grad_accum = 2
 max_steps = 305000
-lr = 3e-4
+lr = 2e-4
 
 lr_scheduler_kwargs={"min_lr": lr*0.1, "num_cycles": 0.5}
 
@@ -147,7 +147,6 @@ class TokenSpeedCallback(TrainerCallback):
                 },
                 step=state.global_step
             )
-
 
 trainer = Trainer(
     model = model,
